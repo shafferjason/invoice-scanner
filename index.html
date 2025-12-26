@@ -324,6 +324,13 @@
           </svg>
           Retake
         </button>
+
+        <button class="btn btn-primary hidden" id="scan-another-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Scan Another Invoice
+        </button>
       </div>
     </main>
   </div>
@@ -338,6 +345,7 @@
     const captureBtn = document.getElementById('capture-btn');
     const sendBtn = document.getElementById('send-btn');
     const retakeBtn = document.getElementById('retake-btn');
+    const scanAnotherBtn = document.getElementById('scan-another-btn');
     const status = document.getElementById('status');
     const permissionPrompt = document.getElementById('permission-prompt');
     const enableCameraBtn = document.getElementById('enable-camera-btn');
@@ -345,6 +353,15 @@
 
     let stream = null;
     let capturedImageData = null;
+
+    // Stop camera stream
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+        video.srcObject = null;
+      }
+    }
 
     // Initialize camera
     async function initCamera() {
@@ -360,6 +377,7 @@
         permissionPrompt.style.display = 'none';
         captureBtn.style.display = 'flex';
         scanOverlay.style.display = 'flex';
+        scanAnotherBtn.classList.add('hidden');
       } catch (err) {
         console.error('Camera error:', err);
         showStatus('Could not access camera. Please check permissions.', 'error');
@@ -368,11 +386,28 @@
 
     enableCameraBtn.addEventListener('click', initCamera);
 
-    // Capture image
+    // Scan Another button
+    scanAnotherBtn.addEventListener('click', () => {
+      hideStatus();
+      previewContainer.classList.remove('active');
+      scanAnotherBtn.classList.add('hidden');
+      initCamera();
+    });
+
+    // Capture image (cropped to frame area)
     captureBtn.addEventListener('click', () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+      const fullWidth = video.videoWidth;
+      const fullHeight = video.videoHeight;
+      
+      // Frame is 85% width and 90% height, centered
+      const cropWidth = fullWidth * 0.85;
+      const cropHeight = fullHeight * 0.90;
+      const cropX = (fullWidth - cropWidth) / 2;
+      const cropY = (fullHeight - cropHeight) / 2;
+      
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+      ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
       
       capturedImageData = canvas.toDataURL('image/jpeg', 0.9);
       previewImage.src = capturedImageData;
@@ -455,10 +490,13 @@
 
         if (response.ok) {
           showStatus('Invoice sent successfully!', 'success');
-          // Reset after success
-          setTimeout(() => {
-            retakeBtn.click();
-          }, 2000);
+          // Stop camera and show scan another button
+          stopCamera();
+          previewContainer.classList.remove('active');
+          sendBtn.classList.add('hidden');
+          retakeBtn.classList.add('hidden');
+          scanAnotherBtn.classList.remove('hidden');
+          capturedImageData = null;
         } else {
           throw new Error(result.error || 'Failed to send invoice');
         }
