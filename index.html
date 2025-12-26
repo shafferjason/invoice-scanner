@@ -222,6 +222,59 @@
       display: none !important;
     }
 
+    /* Amount input */
+    .amount-input-container {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .amount-input-container label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .amount-input-wrapper {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      transition: border-color 0.2s;
+    }
+
+    .amount-input-wrapper:focus-within {
+      border-color: var(--primary);
+    }
+
+    .dollar-sign {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      margin-right: 4px;
+    }
+
+    #amount-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      outline: none;
+    }
+
+    #amount-input::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.5;
+    }
+
     /* Loading spinner */
     .spinner {
       width: 20px;
@@ -302,6 +355,14 @@
 
       <div id="status" class="status"></div>
 
+      <div class="amount-input-container hidden" id="amount-container">
+        <label for="amount-input">Invoice Total:</label>
+        <div class="amount-input-wrapper">
+          <span class="dollar-sign">$</span>
+          <input type="text" id="amount-input" inputmode="decimal" placeholder="0.00">
+        </div>
+      </div>
+
       <div class="controls">
         <button class="btn btn-primary" id="capture-btn" style="display: none;">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -359,6 +420,8 @@
     const permissionPrompt = document.getElementById('permission-prompt');
     const enableCameraBtn = document.getElementById('enable-camera-btn');
     const scanOverlay = document.getElementById('scan-overlay');
+    const amountContainer = document.getElementById('amount-container');
+    const amountInput = document.getElementById('amount-input');
 
     let stream = null;
     let capturedImageData = null;
@@ -452,6 +515,7 @@
       captureBtn.style.display = 'none';
       captureBtn.classList.add('hidden');
       cancelBtn.classList.add('hidden');
+      amountContainer.classList.add('hidden');
       scanOverlay.style.display = 'none';
       permissionPrompt.style.display = 'flex';
       hideStatus();
@@ -529,11 +593,16 @@
       const ocrText = await runOCR(capturedImageData);
       if (ocrText) {
         extractedAmount = findTotalAmount(ocrText);
-        if (extractedAmount) {
-          showStatus(`Total found: $${extractedAmount}`, 'success');
-        } else {
-          showStatus('Could not find total amount', 'loading');
-        }
+      }
+      
+      // Show amount input with extracted value (or empty)
+      amountInput.value = extractedAmount || '';
+      amountContainer.classList.remove('hidden');
+      
+      if (extractedAmount) {
+        showStatus(`Total found: $${extractedAmount} (edit if incorrect)`, 'success');
+      } else {
+        showStatus('Enter total amount', 'loading');
       }
       
       sendBtn.classList.remove('hidden');
@@ -547,6 +616,7 @@
       cancelBtn.classList.remove('hidden');
       sendBtn.classList.add('hidden');
       retakeBtn.classList.add('hidden');
+      amountContainer.classList.add('hidden');
       scanOverlay.style.display = 'flex';
       hideStatus();
       capturedImageData = null;
@@ -598,6 +668,7 @@
         const pdfBase64 = pdf.output('datauristring').split(',')[1];
 
         // Send to serverless function
+        const finalAmount = amountInput.value.trim() || null;
         const response = await fetch('/api/send-invoice', {
           method: 'POST',
           headers: {
@@ -606,7 +677,7 @@
           body: JSON.stringify({
             pdf: pdfBase64,
             filename: `invoice-${new Date().toISOString().slice(0,10)}.pdf`,
-            amount: extractedAmount
+            amount: finalAmount
           })
         });
 
@@ -619,6 +690,7 @@
           previewContainer.classList.remove('active');
           sendBtn.classList.add('hidden');
           retakeBtn.classList.add('hidden');
+          amountContainer.classList.add('hidden');
           scanAnotherBtn.classList.remove('hidden');
           capturedImageData = null;
         } else {
