@@ -399,11 +399,36 @@
       const fullWidth = video.videoWidth;
       const fullHeight = video.videoHeight;
       
-      // Frame is 85% width and 90% height, centered
-      const cropWidth = fullWidth * 0.85;
-      const cropHeight = fullHeight * 0.90;
-      const cropX = (fullWidth - cropWidth) / 2;
-      const cropY = (fullHeight - cropHeight) / 2;
+      // Get the displayed container size
+      const container = document.querySelector('.scanner-container');
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      
+      // Calculate how object-fit: cover scales the video
+      const videoRatio = fullWidth / fullHeight;
+      const containerRatio = containerWidth / containerHeight;
+      
+      let visibleWidth, visibleHeight, offsetX, offsetY;
+      
+      if (videoRatio > containerRatio) {
+        // Video is wider - sides are cropped
+        visibleHeight = fullHeight;
+        visibleWidth = fullHeight * containerRatio;
+        offsetX = (fullWidth - visibleWidth) / 2;
+        offsetY = 0;
+      } else {
+        // Video is taller - top/bottom are cropped
+        visibleWidth = fullWidth;
+        visibleHeight = fullWidth / containerRatio;
+        offsetX = 0;
+        offsetY = (fullHeight - visibleHeight) / 2;
+      }
+      
+      // Frame is 85% width and 90% height of visible area, centered
+      const cropWidth = visibleWidth * 0.85;
+      const cropHeight = visibleHeight * 0.90;
+      const cropX = offsetX + (visibleWidth - cropWidth) / 2;
+      const cropY = offsetY + (visibleHeight - cropHeight) / 2;
       
       canvas.width = cropWidth;
       canvas.height = cropHeight;
