@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Invoice Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #E51636;
+      --primary-dark: #C41230;
+      --bg: #FAFAFA;
+      --surface: #FFFFFF;
+      --text: #1A1A1A;
+      --text-secondary: #666666;
+      --border: #E5E5E5;
+      --success: #10B981;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      font-size: 13px;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .scanner-container {
+      position: relative;
+      background: var(--surface);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      aspect-ratio: 3/4;
+      max-height: 60vh;
+    }
+
+    #video, #canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    .preview-container {
+      display: none;
+    }
+
+    .preview-container.active {
+      display: block;
+    }
+
+    .preview-container.active + .camera-container {
+      display: none;
+    }
+
+    .camera-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    #preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #f0f0f0;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.03);
+      pointer-events: none;
+    }
+
+    .scan-frame {
+      width: 85%;
+      height: 90%;
+      border: 2px dashed var(--primary);
+      border-radius: 12px;
+      opacity: 0.5;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 18px 24px;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-secondary);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .status {
+      text-align: center;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+
+    .status.error {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    .status.loading {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Permission prompt */
+    .permission-prompt {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      text-align: center;
+      padding: 32px;
+      gap: 16px;
+    }
+
+    .permission-prompt svg {
+      width: 64px;
+      height: 64px;
+      color: var(--text-secondary);
+    }
+
+    .permission-prompt h2 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .permission-prompt p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      max-width: 280px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Invoice Scanner</h1>
+      <p>Scan and send invoices</p>
+    </header>
+
+    <main>
+      <div class="scanner-container">
+        <div class="preview-container" id="preview-container">
+          <img id="preview-image" alt="Scanned document">
+        </div>
+        <div class="camera-container" id="camera-container">
+          <div class="permission-prompt" id="permission-prompt">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+            </svg>
+            <h2>Camera Access Required</h2>
+            <p>Tap the button below to enable your camera and start scanning invoices.</p>
+            <button class="btn btn-primary" id="enable-camera-btn" style="width: auto; padding: 14px 28px;">
+              Enable Camera
+            </button>
+          </div>
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas"></canvas>
+          <div class="overlay" id="scan-overlay" style="display: none;">
+            <div class="scan-frame"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="capture-btn" style="display: none;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Scan Invoice
+        </button>
+
+        <button class="btn btn-success hidden" id="send-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Send Invoice
+        </button>
+
+        <button class="btn btn-secondary hidden" id="retake-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Retake
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+    const captureBtn = document.getElementById('capture-btn');
+    const sendBtn = document.getElementById('send-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+    const status = document.getElementById('status');
+    const permissionPrompt = document.getElementById('permission-prompt');
+    const enableCameraBtn = document.getElementById('enable-camera-btn');
+    const scanOverlay = document.getElementById('scan-overlay');
+
+    let stream = null;
+    let capturedImageData = null;
+
+    // Initialize camera
+    async function initCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 2560 }
+          }
+        });
+        video.srcObject = stream;
+        permissionPrompt.style.display = 'none';
+        captureBtn.style.display = 'flex';
+        scanOverlay.style.display = 'flex';
+      } catch (err) {
+        console.error('Camera error:', err);
+        showStatus('Could not access camera. Please check permissions.', 'error');
+      }
+    }
+
+    enableCameraBtn.addEventListener('click', initCamera);
+
+    // Capture image
+    captureBtn.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      
+      capturedImageData = canvas.toDataURL('image/jpeg', 0.9);
+      previewImage.src = capturedImageData;
+      
+      previewContainer.classList.add('active');
+      captureBtn.classList.add('hidden');
+      sendBtn.classList.remove('hidden');
+      retakeBtn.classList.remove('hidden');
+      scanOverlay.style.display = 'none';
+    });
+
+    // Retake
+    retakeBtn.addEventListener('click', () => {
+      previewContainer.classList.remove('active');
+      captureBtn.classList.remove('hidden');
+      sendBtn.classList.add('hidden');
+      retakeBtn.classList.add('hidden');
+      scanOverlay.style.display = 'flex';
+      hideStatus();
+      capturedImageData = null;
+    });
+
+    // Send invoice
+    sendBtn.addEventListener('click', async () => {
+      if (!capturedImageData) return;
+
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<div class="spinner"></div> Sending...';
+      showStatus('Sending invoice...', 'loading');
+
+      try {
+        // Create PDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'letter'
+        });
+
+        // Add image to PDF
+        const img = new Image();
+        img.src = capturedImageData;
+        await new Promise(resolve => img.onload = resolve);
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgRatio = img.width / img.height;
+        const pageRatio = pageWidth / pageHeight;
+
+        let imgWidth, imgHeight;
+        if (imgRatio > pageRatio) {
+          imgWidth = pageWidth - 20;
+          imgHeight = imgWidth / imgRatio;
+        } else {
+          imgHeight = pageHeight - 20;
+          imgWidth = imgHeight * imgRatio;
+        }
+
+        const x = (pageWidth - imgWidth) / 2;
+        const y = (pageHeight - imgHeight) / 2;
+
+        pdf.addImage(capturedImageData, 'JPEG', x, y, imgWidth, imgHeight);
+
+        // Convert to base64
+        const pdfBase64 = pdf.output('datauristring').split(',')[1];
+
+        // Send to serverless function
+        const response = await fetch('/api/send-invoice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            pdf: pdfBase64,
+            filename: `invoice-${new Date().toISOString().slice(0,10)}.pdf`
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showStatus('Invoice sent successfully!', 'success');
+          // Reset after success
+          setTimeout(() => {
+            retakeBtn.click();
+          }, 2000);
+        } else {
+          throw new Error(result.error || 'Failed to send invoice');
+        }
+      } catch (err) {
+        console.error('Send error:', err);
+        showStatus('Failed to send. Please try again.', 'error');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Send Invoice
+        `;
+      }
+    });
+
+    function showStatus(message, type) {
+      status.textContent = message;
+      status.className = `status show ${type}`;
+    }
+
+    function hideStatus() {
+      status.className = 'status';
+    }
+  </script>
+</body>
+</html>
