@@ -10,7 +10,7 @@ export default async (req, context) => {
   }
 
   try {
-    const { pdf, filename } = await req.json();
+    const { pdf, filename, amount } = await req.json();
 
     if (!pdf || !filename) {
       return new Response(JSON.stringify({ error: "Missing PDF data or filename" }), {
@@ -28,6 +28,12 @@ export default async (req, context) => {
       });
     }
 
+    // Build subject line with amount if available
+    const dateStr = new Date().toLocaleDateString();
+    const subject = amount 
+      ? `Invoice - $${amount} - ${dateStr}`
+      : `Invoice - ${dateStr}`;
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -37,9 +43,10 @@ export default async (req, context) => {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [RECIPIENT_EMAIL],
-        subject: `Invoice - ${new Date().toLocaleDateString()}`,
+        subject: subject,
         html: `
           <p>A new invoice has been scanned and attached to this email.</p>
+          ${amount ? `<p><strong>Total Amount:</strong> $${amount}</p>` : ''}
           <p><strong>Scanned on:</strong> ${new Date().toLocaleString()}</p>
         `,
         attachments: [
