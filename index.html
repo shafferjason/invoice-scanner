@@ -343,6 +343,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -361,6 +362,55 @@
 
     let stream = null;
     let capturedImageData = null;
+    let extractedAmount = null;
+
+    // Extract total amount from text using keyword matching
+    function findTotalAmount(text) {
+      const lines = text.split('\n');
+      const amountPattern = /\$?\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+\.\d{2}/g;
+      const totalKeywords = /(?:grand\s*total|total\s*due|amount\s*due|balance\s*due|total|amount|due|sum)\s*:?\s*/i;
+      
+      let bestMatch = null;
+      
+      // First pass: look for keywords followed by amounts on same line
+      for (const line of lines) {
+        if (totalKeywords.test(line)) {
+          const amounts = line.match(amountPattern);
+          if (amounts && amounts.length > 0) {
+            // Get the last amount on the line (usually the total)
+            const amountStr = amounts[amounts.length - 1].replace(/[$,]/g, '');
+            const amount = parseFloat(amountStr);
+            if (!isNaN(amount) && amount > 0) {
+              // Prefer "grand total" or "total due" over just "total"
+              if (/grand\s*total|total\s*due|amount\s*due|balance\s*due/i.test(line)) {
+                return amount.toFixed(2);
+              }
+              bestMatch = amount.toFixed(2);
+            }
+          }
+        }
+      }
+      
+      return bestMatch;
+    }
+
+    // Run OCR on captured image
+    async function runOCR(imageData) {
+      try {
+        showStatus('Reading invoice...', 'loading');
+        const result = await Tesseract.recognize(imageData, 'eng', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              showStatus(`Reading invoice... ${Math.round(m.progress * 100)}%`, 'loading');
+            }
+          }
+        });
+        return result.data.text;
+      } catch (err) {
+        console.error('OCR error:', err);
+        return null;
+      }
+    }
 
     // Stop camera stream
     function stopCamera() {
@@ -416,7 +466,7 @@
     });
 
     // Capture image (cropped to frame area)
-    captureBtn.addEventListener('click', () => {
+    captureBtn.addEventListener('click', async () => {
       const fullWidth = video.videoWidth;
       const fullHeight = video.videoHeight;
       
@@ -472,9 +522,22 @@
       previewContainer.classList.add('active');
       captureBtn.classList.add('hidden');
       cancelBtn.classList.add('hidden');
+      scanOverlay.style.display = 'none';
+      
+      // Run OCR to extract amount
+      extractedAmount = null;
+      const ocrText = await runOCR(capturedImageData);
+      if (ocrText) {
+        extractedAmount = findTotalAmount(ocrText);
+        if (extractedAmount) {
+          showStatus(`Total found: $${extractedAmount}`, 'success');
+        } else {
+          showStatus('Could not find total amount', 'loading');
+        }
+      }
+      
       sendBtn.classList.remove('hidden');
       retakeBtn.classList.remove('hidden');
-      scanOverlay.style.display = 'none';
     });
 
     // Retake
@@ -487,6 +550,7 @@
       scanOverlay.style.display = 'flex';
       hideStatus();
       capturedImageData = null;
+      extractedAmount = null;
     });
 
     // Send invoice
@@ -541,7 +605,8 @@
           },
           body: JSON.stringify({
             pdf: pdfBase64,
-            filename: `invoice-${new Date().toISOString().slice(0,10)}.pdf`
+            filename: `invoice-${new Date().toISOString().slice(0,10)}.pdf`,
+            amount: extractedAmount
           })
         });
 
