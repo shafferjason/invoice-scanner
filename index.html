@@ -2,37 +2,788 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CFA Docs">
+  <meta name="theme-color" content="#E51636">
   <title>Document Scanner | CFA Wall Street</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #E51636;
+      --primary-dark: #C41230;
+      --bg: #F8F9FA;
+      --surface: #FFFFFF;
+      --text: #1A1A1A;
+      --text-secondary: #6B7280;
+      --border: #E5E7EB;
+      --success: #10B981;
+      --radius: 16px;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #F8F9FA;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo svg { width: 22px; height: 22px; color: white; }
+
+    .header-text h1 { font-size: 17px; font-weight: 600; }
+    .header-text p { font-size: 12px; color: var(--text-secondary); }
+
+    /* Main */
+    main {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Scanner */
+    .scanner-box {
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      aspect-ratio: 3/4;
+      max-height: 55vh;
+      position: relative;
+    }
+
+    video, #preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #preview-img { display: none; object-fit: contain; background: #111; }
+
+    .frame-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .frame {
+      width: 88%;
+      height: 92%;
+      border: 2px dashed rgba(255,255,255,0.5);
+      border-radius: 8px;
+    }
+
+    /* Permission prompt */
+    .permission {
+      position: absolute;
+      inset: 0;
+      background: var(--surface);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      text-align: center;
+      padding: 32px;
+      gap: 12px;
     }
-    h1 { color: #E51636; margin-bottom: 10px; }
-    p { color: #666; margin-bottom: 20px; }
+
+    .permission h2 { font-size: 18px; }
+    .permission p { font-size: 14px; color: var(--text-secondary); }
+
+    /* Buttons */
     .btn {
-      background: #E51636;
-      color: white;
+      padding: 16px 24px;
       border: none;
-      padding: 16px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .btn svg { width: 20px; height: 20px; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--bg); color: var(--text); }
+    .btn-success { background: var(--success); color: white; }
+
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; }
+
+    /* Capture button */
+    .capture-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: white;
+      border: 4px solid var(--primary);
       cursor: pointer;
     }
+
+    .capture-btn::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    /* Amount input */
+    .amount-box {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .amount-box label { font-size: 14px; color: var(--text-secondary); }
+
+    .amount-input {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .amount-input span { font-size: 18px; font-weight: 600; }
+
+    .amount-input input {
+      flex: 1;
+      border: none;
+      background: none;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      width: 100%;
+    }
+
+    /* Status */
+    .status {
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status.show { display: block; }
+    .status.success { background: #D1FAE5; color: #065F46; }
+    .status.error { background: #FEE2E2; color: #991B1B; }
+    .status.loading { background: #FEF3C7; color: #92400E; }
+
+    /* PIN Screen */
+    .pin-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pin-box {
+      max-width: 320px;
+      margin: 40px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .pin-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--primary);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .pin-icon svg { width: 32px; height: 32px; color: white; }
+
+    .pin-box h2 { font-size: 22px; margin-bottom: 4px; }
+    .pin-box > p { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+
+    #pin-input {
+      width: 100%;
+      padding: 18px;
+      font-size: 24px;
+      text-align: center;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      font-family: inherit;
+      letter-spacing: 10px;
+      outline: none;
+      margin-bottom: 16px;
+    }
+
+    #pin-input:focus { border-color: var(--primary); }
+
+    .remember-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .remember-box input { width: 18px; height: 18px; }
+
+    .pin-error {
+      color: #991B1B;
+      font-size: 14px;
+      min-height: 20px;
+      margin-top: 8px;
+    }
+
+    .admin-link {
+      display: block;
+      margin-top: 24px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Success overlay */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .success-check {
+      width: 80px;
+      height: 80px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .success-check svg { width: 40px; height: 40px; color: white; }
+    .success-overlay p { margin-top: 16px; font-size: 18px; font-weight: 600; }
   </style>
 </head>
 <body>
-  <h1>Document Scanner</h1>
-  <p>CFA Wall Street</p>
-  <button class="btn" onclick="alert('It works!')">Test Button</button>
-  <p style="margin-top: 20px; font-size: 12px;">If you see this, the page loaded correctly.</p>
+
+  <!-- Success Overlay -->
+  <div class="success-overlay hidden" id="success-overlay">
+    <div class="success-check">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <p>Document Sent!</p>
+  </div>
+
+  <!-- PIN Screen -->
+  <div class="pin-screen" id="pin-screen">
+    <header>
+      <div class="logo">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>Document Scanner</h1>
+        <p>CFA Wall Street</p>
+      </div>
+    </header>
+    <div class="pin-box">
+      <div class="pin-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <h2>Enter PIN</h2>
+      <p>Enter your PIN to access the scanner</p>
+      <input type="password" id="pin-input" inputmode="numeric" maxlength="6" placeholder="••••" autocomplete="off">
+      <label class="remember-box">
+        <input type="checkbox" id="remember-check">
+        <span>Remember this device</span>
+      </label>
+      <button class="btn btn-primary" id="pin-btn">Continue</button>
+      <div class="pin-error" id="pin-error"></div>
+      <a href="/admin" class="admin-link">Admin Settings</a>
+    </div>
+  </div>
+
+  <!-- Scanner Screen -->
+  <div class="hidden" id="scanner-screen">
+    <header>
+      <div class="logo">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>Document Scanner</h1>
+        <p>CFA Wall Street</p>
+      </div>
+    </header>
+    <main>
+      <div class="scanner-box">
+        <div class="permission" id="permission">
+          <h2>Camera Access</h2>
+          <p>Allow camera access to scan documents</p>
+          <button class="btn btn-primary" id="enable-btn" style="width: auto; margin-top: 8px;">Enable Camera</button>
+        </div>
+        <video id="video" autoplay playsinline></video>
+        <img id="preview-img" alt="Preview">
+        <div class="frame-overlay hidden" id="frame-overlay">
+          <div class="frame"></div>
+        </div>
+        <button class="capture-btn hidden" id="capture-btn"></button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div class="amount-box hidden" id="amount-box">
+        <label>Total</label>
+        <div class="amount-input">
+          <span>$</span>
+          <input type="text" id="amount-input" inputmode="decimal" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="btn-row hidden" id="preview-btns">
+        <button class="btn btn-secondary" id="retake-btn">Retake</button>
+        <button class="btn btn-success" id="send-btn">Send</button>
+      </div>
+
+      <button class="btn btn-secondary hidden" id="cancel-btn">Cancel</button>
+      <button class="btn btn-primary hidden" id="another-btn">Scan Another</button>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>
+    // Elements
+    const pinScreen = document.getElementById('pin-screen');
+    const scannerScreen = document.getElementById('scanner-screen');
+    const pinInput = document.getElementById('pin-input');
+    const pinBtn = document.getElementById('pin-btn');
+    const pinError = document.getElementById('pin-error');
+    const rememberCheck = document.getElementById('remember-check');
+
+    const permission = document.getElementById('permission');
+    const enableBtn = document.getElementById('enable-btn');
+    const video = document.getElementById('video');
+    const previewImg = document.getElementById('preview-img');
+    const frameOverlay = document.getElementById('frame-overlay');
+    const captureBtn = document.getElementById('capture-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const previewBtns = document.getElementById('preview-btns');
+    const retakeBtn = document.getElementById('retake-btn');
+    const sendBtn = document.getElementById('send-btn');
+    const anotherBtn = document.getElementById('another-btn');
+    const amountBox = document.getElementById('amount-box');
+    const amountInput = document.getElementById('amount-input');
+    const status = document.getElementById('status');
+    const successOverlay = document.getElementById('success-overlay');
+
+    let stream = null;
+    let imageData = null;
+
+    // Show status message
+    function showStatus(msg, type) {
+      status.textContent = msg;
+      status.className = 'status show ' + type;
+    }
+
+    function hideStatus() {
+      status.className = 'status';
+    }
+
+    // Vibrate helper
+    function vibrate(ms) {
+      if (navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    // Show scanner screen
+    function showScanner() {
+      pinScreen.classList.add('hidden');
+      scannerScreen.classList.remove('hidden');
+    }
+
+    // PIN verification
+    pinBtn.addEventListener('click', verifyPin);
+    pinInput.addEventListener('keypress', e => { if (e.key === 'Enter') verifyPin(); });
+
+    async function verifyPin() {
+      const pin = pinInput.value.trim();
+      if (!pin) {
+        pinError.textContent = 'Please enter a PIN';
+        return;
+      }
+
+      pinBtn.disabled = true;
+      pinBtn.innerHTML = '<span class="spinner"></span>';
+      pinError.textContent = '';
+
+      try {
+        const res = await fetch('/api/verify-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+
+        if (res.ok) {
+          sessionStorage.setItem('auth', 'true');
+
+          if (rememberCheck.checked) {
+            try {
+              const tokenRes = await fetch('/api/device-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'register', pin })
+              });
+              const data = await tokenRes.json();
+              if (data.token) localStorage.setItem('deviceToken', data.token);
+            } catch (e) {}
+          }
+
+          showScanner();
+        } else {
+          pinError.textContent = 'Invalid PIN';
+          pinInput.value = '';
+          vibrate(100);
+        }
+      } catch (e) {
+        pinError.textContent = 'Connection error';
+      }
+
+      pinBtn.disabled = false;
+      pinBtn.textContent = 'Continue';
+    }
+
+    // Check saved auth on load
+    async function checkAuth() {
+      if (sessionStorage.getItem('auth') === 'true') {
+        showScanner();
+        return;
+      }
+
+      const token = localStorage.getItem('deviceToken');
+      if (token) {
+        try {
+          const res = await fetch('/api/device-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'verify', token })
+          });
+          const data = await res.json();
+          if (data.valid) {
+            sessionStorage.setItem('auth', 'true');
+            showScanner();
+          } else {
+            localStorage.removeItem('deviceToken');
+          }
+        } catch (e) {
+          localStorage.removeItem('deviceToken');
+        }
+      }
+    }
+
+    checkAuth();
+
+    // Camera functions
+    enableBtn.addEventListener('click', startCamera);
+    cancelBtn.addEventListener('click', stopAndReset);
+    anotherBtn.addEventListener('click', startCamera);
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 2560 } }
+        });
+        video.srcObject = stream;
+        permission.classList.add('hidden');
+        video.style.display = 'block';
+        previewImg.style.display = 'none';
+        frameOverlay.classList.remove('hidden');
+        captureBtn.classList.remove('hidden');
+        cancelBtn.classList.remove('hidden');
+        anotherBtn.classList.add('hidden');
+        previewBtns.classList.add('hidden');
+        amountBox.classList.add('hidden');
+        hideStatus();
+      } catch (e) {
+        showStatus('Could not access camera', 'error');
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        video.srcObject = null;
+      }
+    }
+
+    function stopAndReset() {
+      stopCamera();
+      video.style.display = 'block';
+      previewImg.style.display = 'none';
+      permission.classList.remove('hidden');
+      frameOverlay.classList.add('hidden');
+      captureBtn.classList.add('hidden');
+      cancelBtn.classList.add('hidden');
+      previewBtns.classList.add('hidden');
+      amountBox.classList.add('hidden');
+      hideStatus();
+    }
+
+    // Capture
+    captureBtn.addEventListener('click', captureImage);
+
+    async function captureImage() {
+      vibrate(30);
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const box = document.querySelector('.scanner-box');
+      const bw = box.offsetWidth;
+      const bh = box.offsetHeight;
+
+      const vRatio = vw / vh;
+      const bRatio = bw / bh;
+
+      let visW, visH, offX, offY;
+      if (vRatio > bRatio) {
+        visH = vh;
+        visW = vh * bRatio;
+        offX = (vw - visW) / 2;
+        offY = 0;
+      } else {
+        visW = vw;
+        visH = vw / bRatio;
+        offX = 0;
+        offY = (vh - visH) / 2;
+      }
+
+      const cropW = visW * 0.88;
+      const cropH = visH * 0.92;
+      const cropX = offX + (visW - cropW) / 2;
+      const cropY = offY + (visH - cropH) / 2;
+
+      canvas.width = cropW;
+      canvas.height = cropH;
+      ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      // Grayscale
+      const imgData = ctx.getImageData(0, 0, cropW, cropH);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        d[i] = d[i+1] = d[i+2] = gray;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      imageData = canvas.toDataURL('image/jpeg', 0.8);
+      previewImg.src = imageData;
+      previewImg.style.display = 'block';
+      video.style.display = 'none';
+      frameOverlay.classList.add('hidden');
+      captureBtn.classList.add('hidden');
+      cancelBtn.classList.add('hidden');
+
+      // OCR
+      showStatus('Reading document...', 'loading');
+      let amount = null;
+      try {
+        const result = await Tesseract.recognize(imageData, 'eng', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              showStatus('Reading... ' + Math.round(m.progress * 100) + '%', 'loading');
+            }
+          }
+        });
+        amount = findAmount(result.data.text);
+      } catch (e) {}
+
+      amountInput.value = amount || '';
+      amountBox.classList.remove('hidden');
+      previewBtns.classList.remove('hidden');
+
+      if (amount) {
+        showStatus('Found: $' + amount, 'success');
+      } else {
+        hideStatus();
+      }
+    }
+
+    function findAmount(text) {
+      const lines = text.split('\n');
+      const pattern = /\$?\d{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+\.\d{2}/g;
+      const keywords = /(?:grand\s*total|total\s*due|amount\s*due|balance|total|due)\s*:?\s*/i;
+
+      let best = null;
+      for (const line of lines) {
+        if (keywords.test(line)) {
+          const amounts = line.match(pattern);
+          if (amounts) {
+            const val = parseFloat(amounts[amounts.length - 1].replace(/[$,]/g, ''));
+            if (!isNaN(val) && val > 0) {
+              if (/grand|due|balance/i.test(line)) return val.toFixed(2);
+              best = val.toFixed(2);
+            }
+          }
+        }
+      }
+      return best;
+    }
+
+    // Retake
+    retakeBtn.addEventListener('click', () => {
+      previewImg.style.display = 'none';
+      video.style.display = 'block';
+      frameOverlay.classList.remove('hidden');
+      captureBtn.classList.remove('hidden');
+      cancelBtn.classList.remove('hidden');
+      previewBtns.classList.add('hidden');
+      amountBox.classList.add('hidden');
+      hideStatus();
+      imageData = null;
+    });
+
+    // Send
+    sendBtn.addEventListener('click', sendDocument);
+
+    async function sendDocument() {
+      if (!imageData) return;
+
+      vibrate(30);
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner"></span>';
+      showStatus('Sending...', 'loading');
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+
+        const img = new Image();
+        img.src = imageData;
+        await new Promise(r => img.onload = r);
+
+        const pw = pdf.internal.pageSize.getWidth();
+        const ph = pdf.internal.pageSize.getHeight();
+        const ir = img.width / img.height;
+        const pr = pw / ph;
+
+        let iw, ih;
+        if (ir > pr) { iw = pw - 20; ih = iw / ir; }
+        else { ih = ph - 20; iw = ih * ir; }
+
+        pdf.addImage(imageData, 'JPEG', (pw - iw) / 2, (ph - ih) / 2, iw, ih);
+
+        const pdfData = pdf.output('datauristring').split(',')[1];
+        const amount = amountInput.value.trim() || null;
+
+        const res = await fetch('/api/send-invoice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pdf: pdfData,
+            filename: 'document-' + new Date().toISOString().slice(0, 10) + '.pdf',
+            amount
+          })
+        });
+
+        if (res.ok) {
+          vibrate([50, 50, 50]);
+          successOverlay.classList.remove('hidden');
+          hideStatus();
+
+          setTimeout(() => {
+            successOverlay.classList.add('hidden');
+            stopCamera();
+            previewImg.style.display = 'none';
+            video.style.display = 'block';
+            previewBtns.classList.add('hidden');
+            amountBox.classList.add('hidden');
+            anotherBtn.classList.remove('hidden');
+            permission.classList.remove('hidden');
+            imageData = null;
+          }, 1500);
+        } else {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed');
+        }
+      } catch (e) {
+        showStatus('Failed to send: ' + e.message, 'error');
+        vibrate(200);
+      }
+
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+    }
+  </script>
 </body>
 </html>
