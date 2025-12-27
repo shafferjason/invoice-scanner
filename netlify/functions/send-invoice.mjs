@@ -1,3 +1,5 @@
+import { getStore } from "@netlify/blobs";
+
 const RECIPIENT_EMAIL = "cfa3043@gmail.com";
 const FROM_EMAIL = "invoices@bespokes.ai";
 
@@ -15,6 +17,42 @@ export default async (req, context) => {
     if (!pdf || !filename) {
       return new Response(JSON.stringify({ error: "Missing PDF data or filename" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // Get client IP for rate limiting
+    const clientIP = context.ip || req.headers.get("x-forwarded-for") || "unknown";
+    const store = getStore("rate-limits");
+    const settingsStore = getStore("settings");
+    
+    // Get rate limit setting (default 20 per hour)
+    const rateLimitSetting = await settingsStore.get("rateLimit") || "20";
+    const maxPerHour = parseInt(rateLimitSetting);
+    
+    // Check rate limit
+    const now = Date.now();
+    const oneHourAgo = now - (60 * 60 * 1000);
+    const rateLimitKey = `sends:${clientIP}`;
+    
+    let sends = [];
+    try {
+      const sendsData = await store.get(rateLimitKey);
+      if (sendsData) {
+        sends = JSON.parse(sendsData);
+      }
+    } catch (e) {
+      sends = [];
+    }
+    
+    // Filter to only sends in the last hour
+    sends = sends.filter(timestamp => timestamp > oneHourAgo);
+    
+    if (sends.length >= maxPerHour) {
+      return new Response(JSON.stringify({ 
+        error: `Rate limit exceeded. Maximum ${maxPerHour} invoices per hour.` 
+      }), {
+        status: 429,
         headers: { "Content-Type": "application/json" }
       });
     }
@@ -69,6 +107,10 @@ export default async (req, context) => {
         headers: { "Content-Type": "application/json" }
       });
     }
+
+    // Record successful send for rate limiting
+    sends.push(now);
+    await store.set(rateLimitKey, JSON.stringify(sends));
 
     return new Response(JSON.stringify({ 
       success: true, 
