@@ -1,10 +1,10 @@
 {
-  "name": "Invoice Scanner",
-  "short_name": "Invoices",
-  "description": "Scan and send invoices",
+  "name": "Document Scanner - CFA Wall Street",
+  "short_name": "CFA Docs",
+  "description": "Scan and send documents",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAFAFA",
+  "background_color": "#F8F9FA",
   "theme_color": "#E51636",
   "orientation": "portrait",
   "icons": [
