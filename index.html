@@ -1112,46 +1112,14 @@
     initAuth();
 
     async function initAuth() {
-      if (sessionStorage.getItem('authenticated') === 'true') {
-        showScanner();
-        return;
-      }
-
-      const savedToken = localStorage.getItem('deviceToken');
-      if (savedToken) {
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 3000);
-          
-          const response = await fetch('/api/device-token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'verify', token: savedToken }),
-            signal: controller.signal
-          });
-          clearTimeout(timeout);
-          
-          const data = await response.json();
-          if (data.valid) {
-            sessionStorage.setItem('authenticated', 'true');
-            showScanner();
-            return;
-          } else {
-            localStorage.removeItem('deviceToken');
-          }
-        } catch (e) {
-          console.error('Token verification failed:', e);
-          localStorage.removeItem('deviceToken');
-        }
-      }
-
+      // Skip straight to PIN screen for now
+      loadingScreen.classList.add('hidden');
+      pinScreen.classList.remove('hidden');
+      
       const credentialId = localStorage.getItem('webauthnCredential');
       if (credentialId && webAuthnAvailable) {
         biometricBtn.classList.remove('hidden');
       }
-
-      loadingScreen.classList.add('hidden');
-      pinScreen.classList.remove('hidden');
     }
 
     function showScanner() {
