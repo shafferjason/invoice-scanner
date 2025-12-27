@@ -33,6 +33,11 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      min-height: -webkit-fill-available;
+    }
+
+    html {
+      height: -webkit-fill-available;
     }
 
     .hidden { display: none !important; }
@@ -40,16 +45,17 @@
     /* Header */
     header {
       background: var(--surface);
-      padding: 16px 20px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       gap: 12px;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .logo {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       background: var(--primary);
       border-radius: 10px;
       display: flex;
@@ -57,10 +63,10 @@
       justify-content: center;
     }
 
-    .logo svg { width: 22px; height: 22px; color: white; }
+    .logo svg { width: 20px; height: 20px; color: white; }
 
-    .header-text h1 { font-size: 17px; font-weight: 600; }
-    .header-text p { font-size: 12px; color: var(--text-secondary); }
+    .header-text h1 { font-size: 16px; font-weight: 600; }
+    .header-text p { font-size: 11px; color: var(--text-secondary); }
 
     .clickable-header {
       cursor: pointer;
@@ -71,22 +77,35 @@
       opacity: 0.7;
     }
 
-    /* Main */
+    /* Main - fill available space */
     main {
-      padding: 20px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
+      flex: 1;
+      overflow: hidden;
     }
 
-    /* Scanner */
+    /* Scanner - fill available space */
     .scanner-box {
       background: var(--surface);
       border-radius: var(--radius);
       overflow: hidden;
-      aspect-ratio: 3/4;
-      max-height: 55vh;
+      flex: 1;
       position: relative;
+      min-height: 0;
+    }
+
+    #scanner-screen {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: -webkit-fill-available;
+    }
+
+    #scanner-screen.hidden {
+      display: none !important;
     }
 
     video, #preview-img {
@@ -132,9 +151,9 @@
 
     /* Buttons */
     .btn {
-      padding: 16px 24px;
+      padding: 14px 20px;
       border: none;
-      border-radius: 14px;
+      border-radius: 12px;
       font-family: inherit;
       font-size: 15px;
       font-weight: 600;
@@ -145,6 +164,7 @@
       gap: 8px;
       width: 100%;
       transition: transform 0.1s ease, opacity 0.1s ease;
+      flex-shrink: 0;
     }
 
     .btn:active {
@@ -157,7 +177,7 @@
     .btn-secondary { background: var(--bg); color: var(--text); }
     .btn-success { background: var(--success); color: white; }
 
-    .btn-row { display: flex; gap: 10px; }
+    .btn-row { display: flex; gap: 10px; flex-shrink: 0; }
     .btn-row .btn { flex: 1; }
 
     /* Capture button */
@@ -190,11 +210,12 @@
     /* Amount input */
     .amount-box {
       background: var(--surface);
-      border-radius: var(--radius);
-      padding: 16px;
+      border-radius: 12px;
+      padding: 12px;
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 0;
     }
 
     .amount-box label { font-size: 14px; color: var(--text-secondary); }
@@ -204,8 +225,8 @@
       display: flex;
       align-items: center;
       background: var(--bg);
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 10px;
     }
 
     .amount-input span { font-size: 18px; font-weight: 600; }
@@ -223,11 +244,12 @@
 
     /* Status */
     .status {
-      padding: 12px;
-      border-radius: 10px;
+      padding: 10px;
+      border-radius: 8px;
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
       display: none;
+      flex-shrink: 0;
     }
 
     .status.show { display: block; }
@@ -238,9 +260,12 @@
     /* PIN Screen */
     .pin-screen {
       min-height: 100vh;
+      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
     }
+
+    .pin-screen.hidden { display: none !important; }
 
     .pin-box {
       max-width: 320px;
@@ -307,6 +332,48 @@
       color: var(--text-secondary);
       text-decoration: none;
       font-size: 14px;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 200;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-box {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .modal-box h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .modal-box p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .modal-box .btn {
+      margin-bottom: 10px;
+    }
+
+    .modal-box .btn:last-child {
+      margin-bottom: 0;
     }
 
     /* Spinner */
@@ -436,8 +503,24 @@
         <span>Remember this device</span>
       </label>
       <button class="btn btn-primary" id="pin-btn">Continue</button>
+      <button class="btn btn-secondary hidden" id="biometric-btn">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+        </svg>
+        Use Face ID / Touch ID
+      </button>
       <div class="pin-error" id="pin-error"></div>
       <a href="/admin" class="admin-link">Admin Settings</a>
+    </div>
+
+    <!-- Biometric setup modal -->
+    <div class="modal hidden" id="biometric-modal">
+      <div class="modal-box">
+        <h3>Set Up Face ID / Touch ID?</h3>
+        <p>Sign in faster next time with biometrics</p>
+        <button class="btn btn-primary" id="setup-bio-btn">Set Up</button>
+        <button class="btn btn-secondary" id="skip-bio-btn">Skip</button>
+      </div>
     </div>
   </div>
 
@@ -499,6 +582,10 @@
     const pinBtn = document.getElementById('pin-btn');
     const pinError = document.getElementById('pin-error');
     const rememberCheck = document.getElementById('remember-check');
+    const biometricBtn = document.getElementById('biometric-btn');
+    const biometricModal = document.getElementById('biometric-modal');
+    const setupBioBtn = document.getElementById('setup-bio-btn');
+    const skipBioBtn = document.getElementById('skip-bio-btn');
 
     const permission = document.getElementById('permission');
     const enableBtn = document.getElementById('enable-btn');
@@ -519,6 +606,10 @@
 
     let stream = null;
     let imageData = null;
+    let currentPin = '';
+
+    // Check if WebAuthn available
+    const webAuthnAvailable = window.PublicKeyCredential !== undefined;
 
     // Sign out - return to PIN screen
     scannerHeader.addEventListener('click', () => {
@@ -607,6 +698,7 @@
         });
 
         if (res.ok) {
+          currentPin = pin;
           sessionStorage.setItem('auth', 'true');
 
           if (rememberCheck.checked) {
@@ -621,7 +713,13 @@
             } catch (e) {}
           }
 
-          showScanner();
+          // Offer biometric setup if available and not already set up
+          const hasCredential = localStorage.getItem('webauthnCred');
+          if (webAuthnAvailable && !hasCredential) {
+            biometricModal.classList.remove('hidden');
+          } else {
+            showScanner();
+          }
         } else {
           pinError.textContent = 'Invalid PIN';
           pinInput.value = '';
@@ -634,6 +732,121 @@
       pinBtn.disabled = false;
       pinBtn.textContent = 'Continue';
     }
+
+    // Skip biometric setup
+    skipBioBtn.addEventListener('click', () => {
+      biometricModal.classList.add('hidden');
+      showScanner();
+    });
+
+    // Setup biometrics
+    setupBioBtn.addEventListener('click', async () => {
+      setupBioBtn.disabled = true;
+      setupBioBtn.innerHTML = '<span class="spinner"></span>';
+
+      try {
+        const challengeRes = await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'challenge' })
+        });
+        const { challenge } = await challengeRes.json();
+
+        const credential = await navigator.credentials.create({
+          publicKey: {
+            challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
+            rp: { name: "CFA Wall Street Docs", id: window.location.hostname },
+            user: {
+              id: Uint8Array.from("cfa-user", c => c.charCodeAt(0)),
+              name: "CFA User",
+              displayName: "CFA User"
+            },
+            pubKeyCredParams: [
+              { alg: -7, type: "public-key" },
+              { alg: -257, type: "public-key" }
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform",
+              userVerification: "required"
+            },
+            timeout: 60000
+          }
+        });
+
+        const credentialId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+
+        await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'register', credentialId, pin: currentPin })
+        });
+
+        localStorage.setItem('webauthnCred', credentialId);
+      } catch (e) {
+        console.error('Biometric setup failed:', e);
+      }
+
+      biometricModal.classList.add('hidden');
+      showScanner();
+      setupBioBtn.disabled = false;
+      setupBioBtn.textContent = 'Set Up';
+    });
+
+    // Biometric login
+    biometricBtn.addEventListener('click', async () => {
+      biometricBtn.disabled = true;
+      biometricBtn.innerHTML = '<span class="spinner" style="border-top-color:var(--text)"></span> Verifying...';
+
+      try {
+        const credentialId = localStorage.getItem('webauthnCred');
+        if (!credentialId) throw new Error('No credential');
+
+        const challengeRes = await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'challenge' })
+        });
+        const { challenge } = await challengeRes.json();
+
+        await navigator.credentials.get({
+          publicKey: {
+            challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
+            allowCredentials: [{
+              id: Uint8Array.from(atob(credentialId), c => c.charCodeAt(0)),
+              type: "public-key"
+            }],
+            userVerification: "required",
+            timeout: 60000
+          }
+        });
+
+        const verifyRes = await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'verify', credentialId })
+        });
+        const data = await verifyRes.json();
+
+        if (data.valid) {
+          sessionStorage.setItem('auth', 'true');
+          showScanner();
+        } else {
+          throw new Error('Invalid');
+        }
+      } catch (e) {
+        pinError.textContent = 'Biometric failed. Use PIN.';
+        localStorage.removeItem('webauthnCred');
+        biometricBtn.classList.add('hidden');
+      }
+
+      biometricBtn.disabled = false;
+      biometricBtn.innerHTML = `
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+        </svg>
+        Use Face ID / Touch ID
+      `;
+    });
 
     // Check saved auth on load
     async function checkAuth() {
@@ -654,12 +867,19 @@
           if (data.valid) {
             sessionStorage.setItem('auth', 'true');
             showScanner();
+            return;
           } else {
             localStorage.removeItem('deviceToken');
           }
         } catch (e) {
           localStorage.removeItem('deviceToken');
         }
+      }
+
+      // Show biometric button if credentials exist
+      const credentialId = localStorage.getItem('webauthnCred');
+      if (credentialId && webAuthnAvailable) {
+        biometricBtn.classList.remove('hidden');
       }
     }
 
