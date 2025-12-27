@@ -62,6 +62,15 @@
     .header-text h1 { font-size: 17px; font-weight: 600; }
     .header-text p { font-size: 12px; color: var(--text-secondary); }
 
+    .clickable-header {
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .clickable-header:active {
+      opacity: 0.7;
+    }
+
     /* Main */
     main {
       padding: 20px;
@@ -135,6 +144,12 @@
       justify-content: center;
       gap: 8px;
       width: 100%;
+      transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+      opacity: 0.9;
     }
 
     .btn svg { width: 20px; height: 20px; }
@@ -157,6 +172,11 @@
       background: white;
       border: 4px solid var(--primary);
       cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .capture-btn:active {
+      transform: translateX(-50%) scale(0.9);
     }
 
     .capture-btn::before {
@@ -256,9 +276,11 @@
       letter-spacing: 10px;
       outline: none;
       margin-bottom: 16px;
+      transition: border-color 0.2s ease, transform 0.4s ease;
     }
 
     #pin-input:focus { border-color: var(--primary); }
+    #pin-input.shake { border-color: #EF4444; }
 
     .remember-box {
       display: flex;
@@ -300,7 +322,43 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Success overlay */
+    /* Visual feedback */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    @keyframes flash {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes captureFlash {
+      0% { background: transparent; }
+      30% { background: rgba(255,255,255,0.9); }
+      100% { background: transparent; }
+    }
+
+    .pulse { animation: pulse 0.15s ease; }
+    .shake { animation: shake 0.4s ease; }
+    .flash { animation: flash 0.2s ease; }
+
+    .capture-flash {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      animation: captureFlash 0.3s ease;
+    }
+
+    /* Success overlay animation */
     .success-overlay {
       position: fixed;
       inset: 0;
@@ -310,6 +368,18 @@
       align-items: center;
       justify-content: center;
       z-index: 100;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); }
     }
 
     .success-check {
@@ -320,6 +390,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .success-check svg { width: 40px; height: 40px; color: white; }
@@ -372,7 +443,7 @@
 
   <!-- Scanner Screen -->
   <div class="hidden" id="scanner-screen">
-    <header>
+    <header class="clickable-header" id="scanner-header" title="Tap to sign out">
       <div class="logo">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -380,7 +451,7 @@
       </div>
       <div class="header-text">
         <h1>Document Scanner</h1>
-        <p>CFA Wall Street</p>
+        <p>CFA Wall Street · Tap to sign out</p>
       </div>
     </header>
     <main>
@@ -444,9 +515,31 @@
     const amountInput = document.getElementById('amount-input');
     const status = document.getElementById('status');
     const successOverlay = document.getElementById('success-overlay');
+    const scannerHeader = document.getElementById('scanner-header');
 
     let stream = null;
     let imageData = null;
+
+    // Sign out - return to PIN screen
+    scannerHeader.addEventListener('click', () => {
+      stopCamera();
+      sessionStorage.removeItem('auth');
+      scannerScreen.classList.add('hidden');
+      pinScreen.classList.remove('hidden');
+      pinInput.value = '';
+      pinError.textContent = '';
+      // Reset scanner state
+      video.style.display = 'block';
+      previewImg.style.display = 'none';
+      permission.classList.remove('hidden');
+      frameOverlay.classList.add('hidden');
+      captureBtn.classList.add('hidden');
+      cancelBtn.classList.add('hidden');
+      previewBtns.classList.add('hidden');
+      amountBox.classList.add('hidden');
+      anotherBtn.classList.add('hidden');
+      hideStatus();
+    });
 
     // Show status message
     function showStatus(msg, type) {
@@ -458,9 +551,31 @@
       status.className = 'status';
     }
 
-    // Vibrate helper
-    function vibrate(ms) {
-      if (navigator.vibrate) navigator.vibrate(ms);
+    // Visual feedback helpers
+    function pulse(el) {
+      el.classList.remove('pulse');
+      void el.offsetWidth; // trigger reflow
+      el.classList.add('pulse');
+    }
+
+    function shake(el) {
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+
+    function flash(el) {
+      el.classList.remove('flash');
+      void el.offsetWidth;
+      el.classList.add('flash');
+    }
+
+    function captureFlash() {
+      const box = document.querySelector('.scanner-box');
+      const flashEl = document.createElement('div');
+      flashEl.className = 'capture-flash';
+      box.appendChild(flashEl);
+      setTimeout(() => flashEl.remove(), 300);
     }
 
     // Show scanner screen
@@ -510,7 +625,7 @@
         } else {
           pinError.textContent = 'Invalid PIN';
           pinInput.value = '';
-          vibrate(100);
+          shake(pinInput);
         }
       } catch (e) {
         pinError.textContent = 'Connection error';
@@ -601,7 +716,8 @@
     captureBtn.addEventListener('click', captureImage);
 
     async function captureImage() {
-      vibrate(30);
+      pulse(captureBtn);
+      captureFlash();
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -719,7 +835,7 @@
     async function sendDocument() {
       if (!imageData) return;
 
-      vibrate(30);
+      pulse(sendBtn);
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<span class="spinner"></span>';
       showStatus('Sending...', 'loading');
@@ -757,7 +873,6 @@
         });
 
         if (res.ok) {
-          vibrate([50, 50, 50]);
           successOverlay.classList.remove('hidden');
           hideStatus();
 
@@ -778,7 +893,7 @@
         }
       } catch (e) {
         showStatus('Failed to send: ' + e.message, 'error');
-        vibrate(200);
+        shake(sendBtn);
       }
 
       sendBtn.disabled = false;
