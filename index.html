@@ -342,6 +342,93 @@
       color: var(--primary);
     }
 
+    /* Checkbox */
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 8px 0;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary);
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 1000;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 320px;
+      text-align: center;
+    }
+
+    .modal-content h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .modal-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-buttons .btn {
+      padding: 14px 20px;
+    }
+
+    /* Loading screen */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    .loading-screen.hidden {
+      display: none;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
     /* Loading spinner */
     .spinner {
       width: 20px;
@@ -390,8 +477,13 @@
 </head>
 <body>
   <div class="app">
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+      <div class="loading-spinner"></div>
+    </div>
+
     <!-- PIN Entry Screen -->
-    <div class="pin-screen" id="pin-screen">
+    <div class="pin-screen hidden" id="pin-screen">
       <header>
         <h1>Invoice Scanner</h1>
         <p>Enter PIN to continue</p>
@@ -399,14 +491,40 @@
       <main>
         <div class="pin-container">
           <input type="password" id="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter PIN" autocomplete="off">
+          
+          <label class="checkbox-label" id="remember-label">
+            <input type="checkbox" id="remember-checkbox">
+            <span>Remember this device for 30 days</span>
+          </label>
+          
           <button class="btn btn-primary" id="pin-submit-btn">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Submit
           </button>
+          
+          <button class="btn btn-secondary hidden" id="biometric-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+            </svg>
+            Use Face ID / Touch ID
+          </button>
+          
           <div id="pin-error" class="pin-error"></div>
           <a href="/admin" class="admin-link">Admin Settings</a>
+        </div>
+        
+        <!-- Setup biometrics modal -->
+        <div class="modal hidden" id="biometric-modal">
+          <div class="modal-content">
+            <h3>Set Up Face ID / Touch ID?</h3>
+            <p>Use biometrics to sign in faster next time.</p>
+            <div class="modal-buttons">
+              <button class="btn btn-primary" id="setup-biometric-btn">Set Up</button>
+              <button class="btn btn-secondary" id="skip-biometric-btn">Skip</button>
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -498,14 +616,68 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     // PIN Screen Elements
+    const loadingScreen = document.getElementById('loading-screen');
     const pinScreen = document.getElementById('pin-screen');
     const scannerScreen = document.getElementById('scanner-screen');
     const pinInput = document.getElementById('pin-input');
     const pinSubmitBtn = document.getElementById('pin-submit-btn');
     const pinError = document.getElementById('pin-error');
+    const rememberCheckbox = document.getElementById('remember-checkbox');
+    const biometricBtn = document.getElementById('biometric-btn');
+    const biometricModal = document.getElementById('biometric-modal');
+    const setupBiometricBtn = document.getElementById('setup-biometric-btn');
+    const skipBiometricBtn = document.getElementById('skip-biometric-btn');
 
-    // Check if already authenticated this session
-    if (sessionStorage.getItem('authenticated') === 'true') {
+    let currentPin = ''; // Store for biometric setup
+
+    // Check if WebAuthn is available
+    const webAuthnAvailable = window.PublicKeyCredential !== undefined;
+
+    // Initialize on page load
+    initAuth();
+
+    async function initAuth() {
+      // Check session storage first (quick check)
+      if (sessionStorage.getItem('authenticated') === 'true') {
+        showScanner();
+        return;
+      }
+
+      // Check for saved device token
+      const savedToken = localStorage.getItem('deviceToken');
+      if (savedToken) {
+        try {
+          const response = await fetch('/api/device-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'verify', token: savedToken })
+          });
+          const data = await response.json();
+          if (data.valid) {
+            sessionStorage.setItem('authenticated', 'true');
+            showScanner();
+            return;
+          } else {
+            localStorage.removeItem('deviceToken');
+          }
+        } catch (e) {
+          console.error('Token verification failed:', e);
+        }
+      }
+
+      // Check if biometrics are set up
+      const credentialId = localStorage.getItem('webauthnCredential');
+      if (credentialId && webAuthnAvailable) {
+        biometricBtn.classList.remove('hidden');
+      }
+
+      // Show PIN screen
+      loadingScreen.classList.add('hidden');
+      pinScreen.classList.remove('hidden');
+    }
+
+    function showScanner() {
+      loadingScreen.classList.add('hidden');
       pinScreen.classList.add('hidden');
       scannerScreen.classList.remove('hidden');
     }
@@ -535,9 +707,33 @@
         });
 
         if (response.ok) {
+          currentPin = pin;
           sessionStorage.setItem('authenticated', 'true');
-          pinScreen.classList.add('hidden');
-          scannerScreen.classList.remove('hidden');
+
+          // Handle "remember this device"
+          if (rememberCheckbox.checked) {
+            try {
+              const tokenResponse = await fetch('/api/device-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'register', pin })
+              });
+              const tokenData = await tokenResponse.json();
+              if (tokenData.token) {
+                localStorage.setItem('deviceToken', tokenData.token);
+              }
+            } catch (e) {
+              console.error('Failed to save device token:', e);
+            }
+          }
+
+          // Offer biometric setup if available and not already set up
+          const hasCredential = localStorage.getItem('webauthnCredential');
+          if (webAuthnAvailable && !hasCredential) {
+            biometricModal.classList.remove('hidden');
+          } else {
+            showScanner();
+          }
         } else {
           pinError.textContent = 'Invalid PIN';
           pinInput.value = '';
@@ -555,6 +751,136 @@
         `;
       }
     }
+
+    // Skip biometric setup
+    skipBiometricBtn.addEventListener('click', () => {
+      biometricModal.classList.add('hidden');
+      showScanner();
+    });
+
+    // Setup biometrics
+    setupBiometricBtn.addEventListener('click', async () => {
+      try {
+        setupBiometricBtn.disabled = true;
+        setupBiometricBtn.innerHTML = '<div class="spinner"></div>';
+
+        // Get challenge from server
+        const challengeResponse = await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'challenge' })
+        });
+        const { challenge } = await challengeResponse.json();
+
+        // Create credential
+        const credential = await navigator.credentials.create({
+          publicKey: {
+            challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
+            rp: {
+              name: "Invoice Scanner",
+              id: window.location.hostname
+            },
+            user: {
+              id: Uint8Array.from("invoice-user", c => c.charCodeAt(0)),
+              name: "Invoice User",
+              displayName: "Invoice User"
+            },
+            pubKeyCredParams: [
+              { alg: -7, type: "public-key" },
+              { alg: -257, type: "public-key" }
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform",
+              userVerification: "required"
+            },
+            timeout: 60000
+          }
+        });
+
+        // Save credential ID
+        const credentialId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+        
+        // Register on server
+        const registerResponse = await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'register', credentialId, pin: currentPin })
+        });
+
+        if (registerResponse.ok) {
+          localStorage.setItem('webauthnCredential', credentialId);
+        }
+
+        biometricModal.classList.add('hidden');
+        showScanner();
+      } catch (err) {
+        console.error('Biometric setup failed:', err);
+        biometricModal.classList.add('hidden');
+        showScanner();
+      }
+    });
+
+    // Use biometrics to login
+    biometricBtn.addEventListener('click', async () => {
+      try {
+        biometricBtn.disabled = true;
+        biometricBtn.innerHTML = '<div class="spinner"></div> Verifying...';
+
+        const credentialId = localStorage.getItem('webauthnCredential');
+        if (!credentialId) {
+          throw new Error('No credential found');
+        }
+
+        // Get challenge from server
+        const challengeResponse = await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'challenge' })
+        });
+        const { challenge } = await challengeResponse.json();
+
+        // Get credential
+        const assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
+            allowCredentials: [{
+              id: Uint8Array.from(atob(credentialId), c => c.charCodeAt(0)),
+              type: "public-key"
+            }],
+            userVerification: "required",
+            timeout: 60000
+          }
+        });
+
+        // Verify with server
+        const verifyResponse = await fetch('/api/webauthn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'verify', credentialId })
+        });
+        const verifyData = await verifyResponse.json();
+
+        if (verifyData.valid) {
+          sessionStorage.setItem('authenticated', 'true');
+          showScanner();
+        } else {
+          throw new Error('Verification failed');
+        }
+      } catch (err) {
+        console.error('Biometric login failed:', err);
+        pinError.textContent = 'Biometric login failed. Please use PIN.';
+        localStorage.removeItem('webauthnCredential');
+        biometricBtn.classList.add('hidden');
+      } finally {
+        biometricBtn.disabled = false;
+        biometricBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+          </svg>
+          Use Face ID / Touch ID
+        `;
+      }
+    });
 
     // Scanner Elements
     const video = document.getElementById('video');
