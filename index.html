@@ -28,16 +28,11 @@
       --radius: 16px;
     }
 
-    body {
+    html, body {
+      height: 100%;
       font-family: 'DM Sans', -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
-    }
-
-    html {
-      height: -webkit-fill-available;
     }
 
     .hidden { display: none !important; }
@@ -45,67 +40,54 @@
     /* Header */
     header {
       background: var(--surface);
-      padding: 12px 16px;
+      padding: 10px 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
     }
 
     .logo {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       background: var(--primary);
-      border-radius: 10px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
-    .logo svg { width: 20px; height: 20px; color: white; }
+    .logo svg { width: 18px; height: 18px; color: white; }
 
-    .header-text h1 { font-size: 16px; font-weight: 600; }
-    .header-text p { font-size: 11px; color: var(--text-secondary); }
+    .header-text h1 { font-size: 15px; font-weight: 600; }
+    .header-text p { font-size: 10px; color: var(--text-secondary); }
 
-    .clickable-header {
-      cursor: pointer;
-      transition: opacity 0.15s ease;
-    }
-
-    .clickable-header:active {
-      opacity: 0.7;
-    }
-
-    /* Main - fill available space */
-    main {
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    /* Scanner - fill available space */
-    .scanner-box {
-      background: var(--surface);
-      border-radius: var(--radius);
-      overflow: hidden;
-      flex: 1;
-      position: relative;
-      min-height: 0;
-    }
-
+    /* Scanner screen layout */
     #scanner-screen {
       display: flex;
       flex-direction: column;
       height: 100vh;
-      height: -webkit-fill-available;
     }
 
-    #scanner-screen.hidden {
-      display: none !important;
+    #scanner-screen main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    /* Scanner box - large portrait */
+    .scanner-box {
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+      flex: 1;
+      position: relative;
+      min-height: 70vh;
+      aspect-ratio: 3/4;
     }
 
     video, #preview-img {
@@ -114,7 +96,11 @@
       object-fit: cover;
     }
 
-    #preview-img { display: none; object-fit: contain; background: #111; }
+    #preview-img { 
+      display: none; 
+      object-fit: contain; 
+      background: #111; 
+    }
 
     .frame-overlay {
       position: absolute;
@@ -126,9 +112,9 @@
     }
 
     .frame {
-      width: 88%;
-      height: 92%;
-      border: 2px dashed rgba(255,255,255,0.5);
+      width: 90%;
+      height: 95%;
+      border: 2px dashed rgba(255,255,255,0.6);
       border-radius: 8px;
     }
 
@@ -151,58 +137,47 @@
 
     /* Buttons */
     .btn {
-      padding: 14px 20px;
+      padding: 12px 16px;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       font-family: inherit;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       width: 100%;
-      transition: transform 0.1s ease, opacity 0.1s ease;
-      flex-shrink: 0;
     }
 
-    .btn:active {
-      transform: scale(0.97);
-      opacity: 0.9;
-    }
-
-    .btn svg { width: 20px; height: 20px; }
+    .btn svg { width: 18px; height: 18px; }
     .btn-primary { background: var(--primary); color: white; }
-    .btn-secondary { background: var(--bg); color: var(--text); }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
     .btn-success { background: var(--success); color: white; }
 
-    .btn-row { display: flex; gap: 10px; flex-shrink: 0; }
+    .btn-row { display: flex; gap: 8px; }
     .btn-row .btn { flex: 1; }
 
     /* Capture button */
     .capture-btn {
       position: absolute;
-      bottom: 20px;
+      bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
-      width: 70px;
-      height: 70px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       background: white;
-      border: 4px solid var(--primary);
+      border: 3px solid var(--primary);
       cursor: pointer;
-      transition: transform 0.1s ease;
-    }
-
-    .capture-btn:active {
-      transform: translateX(-50%) scale(0.9);
+      z-index: 10;
     }
 
     .capture-btn::before {
       content: '';
       position: absolute;
-      inset: 6px;
+      inset: 4px;
       background: var(--primary);
       border-radius: 50%;
     }
@@ -210,15 +185,14 @@
     /* Amount input */
     .amount-box {
       background: var(--surface);
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 10px 14px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      flex-shrink: 0;
+      gap: 10px;
     }
 
-    .amount-box label { font-size: 14px; color: var(--text-secondary); }
+    .amount-box label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
 
     .amount-input {
       flex: 1;
@@ -226,17 +200,17 @@
       align-items: center;
       background: var(--bg);
       border-radius: 8px;
-      padding: 10px;
+      padding: 8px 10px;
     }
 
-    .amount-input span { font-size: 18px; font-weight: 600; }
+    .amount-input span { font-size: 16px; font-weight: 600; }
 
     .amount-input input {
       flex: 1;
       border: none;
       background: none;
       font-family: inherit;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
       outline: none;
       width: 100%;
@@ -244,12 +218,11 @@
 
     /* Status */
     .status {
-      padding: 10px;
+      padding: 8px;
       border-radius: 8px;
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
       display: none;
-      flex-shrink: 0;
     }
 
     .status.show { display: block; }
@@ -260,126 +233,79 @@
     /* PIN Screen */
     .pin-screen {
       min-height: 100vh;
-      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
     }
 
-    .pin-screen.hidden { display: none !important; }
-
     .pin-box {
-      max-width: 320px;
+      max-width: 300px;
       margin: 40px auto;
       padding: 0 20px;
       text-align: center;
     }
 
     .pin-icon {
-      width: 64px;
-      height: 64px;
+      width: 56px;
+      height: 56px;
       background: var(--primary);
-      border-radius: 16px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 16px;
     }
 
-    .pin-icon svg { width: 32px; height: 32px; color: white; }
+    .pin-icon svg { width: 28px; height: 28px; color: white; }
 
-    .pin-box h2 { font-size: 22px; margin-bottom: 4px; }
+    .pin-box h2 { font-size: 20px; margin-bottom: 4px; }
     .pin-box > p { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
 
     #pin-input {
       width: 100%;
-      padding: 18px;
-      font-size: 24px;
+      padding: 16px;
+      font-size: 22px;
       text-align: center;
       border: 2px solid var(--border);
-      border-radius: 14px;
+      border-radius: 12px;
       font-family: inherit;
-      letter-spacing: 10px;
+      letter-spacing: 8px;
       outline: none;
-      margin-bottom: 16px;
-      transition: border-color 0.2s ease, transform 0.4s ease;
+      margin-bottom: 12px;
     }
 
     #pin-input:focus { border-color: var(--primary); }
-    #pin-input.shake { border-color: #EF4444; }
 
     .remember-box {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       justify-content: center;
       margin-bottom: 16px;
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-secondary);
     }
 
-    .remember-box input { width: 18px; height: 18px; }
+    .remember-box input { width: 16px; height: 16px; }
 
     .pin-error {
       color: #991B1B;
-      font-size: 14px;
-      min-height: 20px;
+      font-size: 13px;
+      min-height: 18px;
       margin-top: 8px;
     }
 
     .admin-link {
       display: block;
-      margin-top: 24px;
+      margin-top: 20px;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 14px;
-    }
-
-    /* Modal */
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      z-index: 200;
-    }
-
-    .modal.hidden { display: none; }
-
-    .modal-box {
-      background: var(--surface);
-      border-radius: 20px;
-      padding: 28px;
-      max-width: 300px;
-      text-align: center;
-    }
-
-    .modal-box h3 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .modal-box p {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 20px;
-    }
-
-    .modal-box .btn {
-      margin-bottom: 10px;
-    }
-
-    .modal-box .btn:last-child {
-      margin-bottom: 0;
+      font-size: 13px;
     }
 
     /* Spinner */
     .spinner {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border: 2px solid rgba(255,255,255,0.3);
       border-top-color: white;
       border-radius: 50%;
@@ -389,43 +315,7 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Visual feedback */
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(0.95); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-8px); }
-      40%, 80% { transform: translateX(8px); }
-    }
-
-    @keyframes flash {
-      0% { opacity: 1; }
-      50% { opacity: 0.3; }
-      100% { opacity: 1; }
-    }
-
-    @keyframes captureFlash {
-      0% { background: transparent; }
-      30% { background: rgba(255,255,255,0.9); }
-      100% { background: transparent; }
-    }
-
-    .pulse { animation: pulse 0.15s ease; }
-    .shake { animation: shake 0.4s ease; }
-    .flash { animation: flash 0.2s ease; }
-
-    .capture-flash {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      animation: captureFlash 0.3s ease;
-    }
-
-    /* Success overlay animation */
+    /* Success overlay */
     .success-overlay {
       position: fixed;
       inset: 0;
@@ -435,33 +325,20 @@
       align-items: center;
       justify-content: center;
       z-index: 100;
-      animation: fadeIn 0.2s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes popIn {
-      0% { transform: scale(0); }
-      70% { transform: scale(1.1); }
-      100% { transform: scale(1); }
     }
 
     .success-check {
-      width: 80px;
-      height: 80px;
+      width: 72px;
+      height: 72px;
       background: var(--success);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    .success-check svg { width: 40px; height: 40px; color: white; }
-    .success-overlay p { margin-top: 16px; font-size: 18px; font-weight: 600; }
+    .success-check svg { width: 36px; height: 36px; color: white; }
+    .success-overlay p { margin-top: 16px; font-size: 17px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -503,30 +380,14 @@
         <span>Remember this device</span>
       </label>
       <button class="btn btn-primary" id="pin-btn">Continue</button>
-      <button class="btn btn-secondary hidden" id="biometric-btn">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
-        </svg>
-        Use Face ID / Touch ID
-      </button>
       <div class="pin-error" id="pin-error"></div>
       <a href="/admin" class="admin-link">Admin Settings</a>
-    </div>
-
-    <!-- Biometric setup modal -->
-    <div class="modal hidden" id="biometric-modal">
-      <div class="modal-box">
-        <h3>Set Up Face ID / Touch ID?</h3>
-        <p>Sign in faster next time with biometrics</p>
-        <button class="btn btn-primary" id="setup-bio-btn">Set Up</button>
-        <button class="btn btn-secondary" id="skip-bio-btn">Skip</button>
-      </div>
     </div>
   </div>
 
   <!-- Scanner Screen -->
   <div class="hidden" id="scanner-screen">
-    <header class="clickable-header" id="scanner-header" title="Tap to sign out">
+    <header>
       <div class="logo">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -534,7 +395,7 @@
       </div>
       <div class="header-text">
         <h1>Document Scanner</h1>
-        <p>CFA Wall Street · Tap to sign out</p>
+        <p>CFA Wall Street</p>
       </div>
     </header>
     <main>
@@ -582,10 +443,6 @@
     const pinBtn = document.getElementById('pin-btn');
     const pinError = document.getElementById('pin-error');
     const rememberCheck = document.getElementById('remember-check');
-    const biometricBtn = document.getElementById('biometric-btn');
-    const biometricModal = document.getElementById('biometric-modal');
-    const setupBioBtn = document.getElementById('setup-bio-btn');
-    const skipBioBtn = document.getElementById('skip-bio-btn');
 
     const permission = document.getElementById('permission');
     const enableBtn = document.getElementById('enable-btn');
@@ -602,37 +459,10 @@
     const amountInput = document.getElementById('amount-input');
     const status = document.getElementById('status');
     const successOverlay = document.getElementById('success-overlay');
-    const scannerHeader = document.getElementById('scanner-header');
 
     let stream = null;
     let imageData = null;
-    let currentPin = '';
 
-    // Check if WebAuthn available
-    const webAuthnAvailable = window.PublicKeyCredential !== undefined;
-
-    // Sign out - return to PIN screen
-    scannerHeader.addEventListener('click', () => {
-      stopCamera();
-      sessionStorage.removeItem('auth');
-      scannerScreen.classList.add('hidden');
-      pinScreen.classList.remove('hidden');
-      pinInput.value = '';
-      pinError.textContent = '';
-      // Reset scanner state
-      video.style.display = 'block';
-      previewImg.style.display = 'none';
-      permission.classList.remove('hidden');
-      frameOverlay.classList.add('hidden');
-      captureBtn.classList.add('hidden');
-      cancelBtn.classList.add('hidden');
-      previewBtns.classList.add('hidden');
-      amountBox.classList.add('hidden');
-      anotherBtn.classList.add('hidden');
-      hideStatus();
-    });
-
-    // Show status message
     function showStatus(msg, type) {
       status.textContent = msg;
       status.className = 'status show ' + type;
@@ -642,34 +472,10 @@
       status.className = 'status';
     }
 
-    // Visual feedback helpers
-    function pulse(el) {
-      el.classList.remove('pulse');
-      void el.offsetWidth; // trigger reflow
-      el.classList.add('pulse');
+    function vibrate(ms) {
+      if (navigator.vibrate) navigator.vibrate(ms);
     }
 
-    function shake(el) {
-      el.classList.remove('shake');
-      void el.offsetWidth;
-      el.classList.add('shake');
-    }
-
-    function flash(el) {
-      el.classList.remove('flash');
-      void el.offsetWidth;
-      el.classList.add('flash');
-    }
-
-    function captureFlash() {
-      const box = document.querySelector('.scanner-box');
-      const flashEl = document.createElement('div');
-      flashEl.className = 'capture-flash';
-      box.appendChild(flashEl);
-      setTimeout(() => flashEl.remove(), 300);
-    }
-
-    // Show scanner screen
     function showScanner() {
       pinScreen.classList.add('hidden');
       scannerScreen.classList.remove('hidden');
@@ -698,7 +504,6 @@
         });
 
         if (res.ok) {
-          currentPin = pin;
           sessionStorage.setItem('auth', 'true');
 
           if (rememberCheck.checked) {
@@ -713,17 +518,11 @@
             } catch (e) {}
           }
 
-          // Offer biometric setup if available and not already set up
-          const hasCredential = localStorage.getItem('webauthnCred');
-          if (webAuthnAvailable && !hasCredential) {
-            biometricModal.classList.remove('hidden');
-          } else {
-            showScanner();
-          }
+          showScanner();
         } else {
           pinError.textContent = 'Invalid PIN';
           pinInput.value = '';
-          shake(pinInput);
+          vibrate(100);
         }
       } catch (e) {
         pinError.textContent = 'Connection error';
@@ -732,121 +531,6 @@
       pinBtn.disabled = false;
       pinBtn.textContent = 'Continue';
     }
-
-    // Skip biometric setup
-    skipBioBtn.addEventListener('click', () => {
-      biometricModal.classList.add('hidden');
-      showScanner();
-    });
-
-    // Setup biometrics
-    setupBioBtn.addEventListener('click', async () => {
-      setupBioBtn.disabled = true;
-      setupBioBtn.innerHTML = '<span class="spinner"></span>';
-
-      try {
-        const challengeRes = await fetch('/api/webauthn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'challenge' })
-        });
-        const { challenge } = await challengeRes.json();
-
-        const credential = await navigator.credentials.create({
-          publicKey: {
-            challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
-            rp: { name: "CFA Wall Street Docs", id: window.location.hostname },
-            user: {
-              id: Uint8Array.from("cfa-user", c => c.charCodeAt(0)),
-              name: "CFA User",
-              displayName: "CFA User"
-            },
-            pubKeyCredParams: [
-              { alg: -7, type: "public-key" },
-              { alg: -257, type: "public-key" }
-            ],
-            authenticatorSelection: {
-              authenticatorAttachment: "platform",
-              userVerification: "required"
-            },
-            timeout: 60000
-          }
-        });
-
-        const credentialId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-
-        await fetch('/api/webauthn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'register', credentialId, pin: currentPin })
-        });
-
-        localStorage.setItem('webauthnCred', credentialId);
-      } catch (e) {
-        console.error('Biometric setup failed:', e);
-      }
-
-      biometricModal.classList.add('hidden');
-      showScanner();
-      setupBioBtn.disabled = false;
-      setupBioBtn.textContent = 'Set Up';
-    });
-
-    // Biometric login
-    biometricBtn.addEventListener('click', async () => {
-      biometricBtn.disabled = true;
-      biometricBtn.innerHTML = '<span class="spinner" style="border-top-color:var(--text)"></span> Verifying...';
-
-      try {
-        const credentialId = localStorage.getItem('webauthnCred');
-        if (!credentialId) throw new Error('No credential');
-
-        const challengeRes = await fetch('/api/webauthn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'challenge' })
-        });
-        const { challenge } = await challengeRes.json();
-
-        await navigator.credentials.get({
-          publicKey: {
-            challenge: Uint8Array.from(challenge, c => c.charCodeAt(0)),
-            allowCredentials: [{
-              id: Uint8Array.from(atob(credentialId), c => c.charCodeAt(0)),
-              type: "public-key"
-            }],
-            userVerification: "required",
-            timeout: 60000
-          }
-        });
-
-        const verifyRes = await fetch('/api/webauthn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'verify', credentialId })
-        });
-        const data = await verifyRes.json();
-
-        if (data.valid) {
-          sessionStorage.setItem('auth', 'true');
-          showScanner();
-        } else {
-          throw new Error('Invalid');
-        }
-      } catch (e) {
-        pinError.textContent = 'Biometric failed. Use PIN.';
-        localStorage.removeItem('webauthnCred');
-        biometricBtn.classList.add('hidden');
-      }
-
-      biometricBtn.disabled = false;
-      biometricBtn.innerHTML = `
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
-        </svg>
-        Use Face ID / Touch ID
-      `;
-    });
 
     // Check saved auth on load
     async function checkAuth() {
@@ -867,19 +551,12 @@
           if (data.valid) {
             sessionStorage.setItem('auth', 'true');
             showScanner();
-            return;
           } else {
             localStorage.removeItem('deviceToken');
           }
         } catch (e) {
           localStorage.removeItem('deviceToken');
         }
-      }
-
-      // Show biometric button if credentials exist
-      const credentialId = localStorage.getItem('webauthnCred');
-      if (credentialId && webAuthnAvailable) {
-        biometricBtn.classList.remove('hidden');
       }
     }
 
@@ -936,8 +613,7 @@
     captureBtn.addEventListener('click', captureImage);
 
     async function captureImage() {
-      pulse(captureBtn);
-      captureFlash();
+      vibrate(30);
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -964,8 +640,8 @@
         offY = (vh - visH) / 2;
       }
 
-      const cropW = visW * 0.88;
-      const cropH = visH * 0.92;
+      const cropW = visW * 0.90;
+      const cropH = visH * 0.95;
       const cropX = offX + (visW - cropW) / 2;
       const cropY = offY + (visH - cropH) / 2;
 
@@ -1055,7 +731,7 @@
     async function sendDocument() {
       if (!imageData) return;
 
-      pulse(sendBtn);
+      vibrate(30);
       sendBtn.disabled = true;
       sendBtn.innerHTML = '<span class="spinner"></span>';
       showStatus('Sending...', 'loading');
@@ -1093,6 +769,7 @@
         });
 
         if (res.ok) {
+          vibrate([50, 50, 50]);
           successOverlay.classList.remove('hidden');
           hideStatus();
 
@@ -1113,7 +790,7 @@
         }
       } catch (e) {
         showStatus('Failed to send: ' + e.message, 'error');
-        shake(sendBtn);
+        vibrate(200);
       }
 
       sendBtn.disabled = false;
