@@ -69,8 +69,8 @@ export default async (req, context) => {
     // Build subject line with amount if available
     const dateStr = new Date().toLocaleDateString();
     const subject = amount 
-      ? `Invoice - $${amount} - ${dateStr}`
-      : `Invoice - ${dateStr}`;
+      ? `Document - $${amount} - ${dateStr}`
+      : `Document - ${dateStr}`;
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -83,7 +83,7 @@ export default async (req, context) => {
         to: [RECIPIENT_EMAIL],
         subject: subject,
         html: `
-          <p>A new invoice has been scanned and attached to this email.</p>
+          <p>A new document has been scanned and attached to this email.</p>
           ${amount ? `<p><strong>Total Amount:</strong> $${amount}</p>` : ''}
           <p><strong>Scanned on:</strong> ${new Date().toLocaleString()}</p>
         `,
