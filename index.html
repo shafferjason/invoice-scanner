@@ -329,6 +329,19 @@
       min-height: 20px;
     }
 
+    .admin-link {
+      display: block;
+      text-align: center;
+      margin-top: 24px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .admin-link:hover {
+      color: var(--primary);
+    }
+
     /* Loading spinner */
     .spinner {
       width: 20px;
@@ -393,6 +406,7 @@
             Submit
           </button>
           <div id="pin-error" class="pin-error"></div>
+          <a href="/admin" class="admin-link">Admin Settings</a>
         </div>
       </main>
     </div>
