@@ -281,6 +281,54 @@
       opacity: 0.5;
     }
 
+    /* PIN Screen */
+    .pin-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pin-screen.hidden {
+      display: none;
+    }
+
+    .scanner-screen.hidden {
+      display: none;
+    }
+
+    .pin-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 300px;
+      margin: 0 auto;
+      padding-top: 60px;
+    }
+
+    #pin-input {
+      width: 100%;
+      padding: 20px;
+      font-size: 24px;
+      text-align: center;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      letter-spacing: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #pin-input:focus {
+      border-color: var(--primary);
+    }
+
+    .pin-error {
+      color: #991B1B;
+      text-align: center;
+      font-size: 14px;
+      min-height: 20px;
+    }
+
     /* Loading spinner */
     .spinner {
       width: 20px;
@@ -329,6 +377,28 @@
 </head>
 <body>
   <div class="app">
+    <!-- PIN Entry Screen -->
+    <div class="pin-screen" id="pin-screen">
+      <header>
+        <h1>Invoice Scanner</h1>
+        <p>Enter PIN to continue</p>
+      </header>
+      <main>
+        <div class="pin-container">
+          <input type="password" id="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter PIN" autocomplete="off">
+          <button class="btn btn-primary" id="pin-submit-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Submit
+          </button>
+          <div id="pin-error" class="pin-error"></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Main Scanner Screen (hidden until PIN verified) -->
+    <div class="scanner-screen hidden" id="scanner-screen">
     <header>
       <h1>Invoice Scanner</h1>
       <p>Scan and send invoices</p>
@@ -407,11 +477,72 @@
         </button>
       </div>
     </main>
+    </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
+    // PIN Screen Elements
+    const pinScreen = document.getElementById('pin-screen');
+    const scannerScreen = document.getElementById('scanner-screen');
+    const pinInput = document.getElementById('pin-input');
+    const pinSubmitBtn = document.getElementById('pin-submit-btn');
+    const pinError = document.getElementById('pin-error');
+
+    // Check if already authenticated this session
+    if (sessionStorage.getItem('authenticated') === 'true') {
+      pinScreen.classList.add('hidden');
+      scannerScreen.classList.remove('hidden');
+    }
+
+    // PIN submission
+    pinSubmitBtn.addEventListener('click', verifyPin);
+    pinInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') verifyPin();
+    });
+
+    async function verifyPin() {
+      const pin = pinInput.value.trim();
+      if (!pin) {
+        pinError.textContent = 'Please enter a PIN';
+        return;
+      }
+
+      pinSubmitBtn.disabled = true;
+      pinSubmitBtn.innerHTML = '<div class="spinner"></div> Verifying...';
+      pinError.textContent = '';
+
+      try {
+        const response = await fetch('/api/verify-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+
+        if (response.ok) {
+          sessionStorage.setItem('authenticated', 'true');
+          pinScreen.classList.add('hidden');
+          scannerScreen.classList.remove('hidden');
+        } else {
+          pinError.textContent = 'Invalid PIN';
+          pinInput.value = '';
+          pinInput.focus();
+        }
+      } catch (err) {
+        pinError.textContent = 'Connection error. Please try again.';
+      } finally {
+        pinSubmitBtn.disabled = false;
+        pinSubmitBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Submit
+        `;
+      }
+    }
+
+    // Scanner Elements
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');

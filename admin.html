@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin - Invoice Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #E51636;
+      --primary-dark: #C41230;
+      --bg: #FAFAFA;
+      --surface: #FFFFFF;
+      --text: #1A1A1A;
+      --text-secondary: #666666;
+      --border: #E5E5E5;
+      --success: #10B981;
+      --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      max-width: 400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .status {
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    .status.success {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+
+    .status.error {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Admin Settings</h1>
+    </header>
+
+    <main>
+      <!-- Login Screen -->
+      <div id="login-screen">
+        <div class="card">
+          <h2>Admin Login</h2>
+          <div class="form-group">
+            <label for="admin-password">Admin Password</label>
+            <input type="password" id="admin-password" placeholder="Enter admin password">
+          </div>
+          <button class="btn btn-primary" id="login-btn">Login</button>
+          <div id="login-status" class="status hidden"></div>
+        </div>
+      </div>
+
+      <!-- Settings Screen -->
+      <div id="settings-screen" class="hidden">
+        <div class="card">
+          <h2>User PIN</h2>
+          <div class="form-group">
+            <label for="user-pin">PIN Code (4-6 digits)</label>
+            <input type="text" id="user-pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="1234">
+          </div>
+          <button class="btn btn-primary" id="save-pin-btn">Save PIN</button>
+          <div id="pin-status" class="status hidden"></div>
+        </div>
+
+        <div class="card">
+          <h2>Rate Limit</h2>
+          <div class="form-group">
+            <label for="rate-limit">Max invoices per hour</label>
+            <input type="number" id="rate-limit" min="1" max="1000" placeholder="20">
+          </div>
+          <button class="btn btn-primary" id="save-rate-btn">Save Rate Limit</button>
+          <div id="rate-status" class="status hidden"></div>
+        </div>
+
+        <button class="btn btn-secondary" id="logout-btn">Logout</button>
+      </div>
+
+      <a href="/" class="back-link">← Back to Scanner</a>
+    </main>
+  </div>
+
+  <script>
+    const loginScreen = document.getElementById('login-screen');
+    const settingsScreen = document.getElementById('settings-screen');
+    const adminPasswordInput = document.getElementById('admin-password');
+    const loginBtn = document.getElementById('login-btn');
+    const loginStatus = document.getElementById('login-status');
+    const userPinInput = document.getElementById('user-pin');
+    const rateLimitInput = document.getElementById('rate-limit');
+    const savePinBtn = document.getElementById('save-pin-btn');
+    const saveRateBtn = document.getElementById('save-rate-btn');
+    const pinStatus = document.getElementById('pin-status');
+    const rateStatus = document.getElementById('rate-status');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    let adminPassword = '';
+
+    // Login
+    loginBtn.addEventListener('click', login);
+    adminPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+
+    async function login() {
+      const password = adminPasswordInput.value.trim();
+      if (!password) return;
+
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<div class="spinner"></div>';
+      loginStatus.className = 'status hidden';
+
+      try {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        if (response.ok) {
+          adminPassword = password;
+          await loadSettings();
+          loginScreen.classList.add('hidden');
+          settingsScreen.classList.remove('hidden');
+        } else {
+          showStatus(loginStatus, 'Invalid password', 'error');
+        }
+      } catch (err) {
+        showStatus(loginStatus, 'Connection error', 'error');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+      }
+    }
+
+    // Load settings
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminPassword })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          userPinInput.value = data.pin;
+          rateLimitInput.value = data.rateLimit;
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    // Save PIN
+    savePinBtn.addEventListener('click', async () => {
+      const pin = userPinInput.value.trim();
+      if (!/^\d{4,6}$/.test(pin)) {
+        showStatus(pinStatus, 'PIN must be 4-6 digits', 'error');
+        return;
+      }
+
+      savePinBtn.disabled = true;
+      savePinBtn.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const response = await fetch('/api/admin/set-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminPassword, pin })
+        });
+
+        if (response.ok) {
+          showStatus(pinStatus, 'PIN saved!', 'success');
+        } else {
+          const data = await response.json();
+          showStatus(pinStatus, data.error || 'Failed to save', 'error');
+        }
+      } catch (err) {
+        showStatus(pinStatus, 'Connection error', 'error');
+      } finally {
+        savePinBtn.disabled = false;
+        savePinBtn.textContent = 'Save PIN';
+      }
+    });
+
+    // Save rate limit
+    saveRateBtn.addEventListener('click', async () => {
+      const rateLimit = rateLimitInput.value;
+      if (!rateLimit || rateLimit < 1) {
+        showStatus(rateStatus, 'Enter a valid number', 'error');
+        return;
+      }
+
+      saveRateBtn.disabled = true;
+      saveRateBtn.innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const response = await fetch('/api/admin/set-rate-limit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminPassword, rateLimit })
+        });
+
+        if (response.ok) {
+          showStatus(rateStatus, 'Rate limit saved!', 'success');
+        } else {
+          const data = await response.json();
+          showStatus(rateStatus, data.error || 'Failed to save', 'error');
+        }
+      } catch (err) {
+        showStatus(rateStatus, 'Connection error', 'error');
+      } finally {
+        saveRateBtn.disabled = false;
+        saveRateBtn.textContent = 'Save Rate Limit';
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+      adminPassword = '';
+      adminPasswordInput.value = '';
+      loginScreen.classList.remove('hidden');
+      settingsScreen.classList.add('hidden');
+    });
+
+    function showStatus(element, message, type) {
+      element.textContent = message;
+      element.className = `status ${type}`;
+      setTimeout(() => {
+        element.className = 'status hidden';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
